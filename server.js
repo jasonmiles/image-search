@@ -61,7 +61,7 @@ app.get('/api/latest/imagesearch/', function(req, res) {
       console.log('Connected to server');
       var collection = db.collection('results');
 
-      collection.find({}, {_id:0}).sort({when:1}).limit(10).toArray(function(err, results) {
+      collection.find({}, {_id:0}).skip(db.collection.count() - 10).toArray(function(err, results) {
         if (err) {
           console.log(err);
         } else {
