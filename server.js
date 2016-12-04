@@ -9,24 +9,46 @@ var port = process.env.PORT || 8080;
 
 app.get('/api/imagesearch/*', function(req, res) {
   var searchTerm = req.originalUrl.substr(17);
-  // var searchTerm = decodeURIComponent(url);
+  var searchTermDecoded = decodeURIComponent(searchTerm);
+  var requestTime = new Date();
+  var MongoClient = mongodb.MongoClient;
 
-  Bing.images(searchTerm, {
-    top: 10,
-  }, function(error, result, body){
+  var mongoUrl = process.env.MONGOLAB_URI;
 
-    if (error) throw error;
+  MongoClient.connect(mongoUrl, function(err, db) {
+    if (err) {
+      console.log('Unable to connect to the Server', err);
+    } else {
+      console.log('Connected to server');
+      var collection = db.collection('results');
 
-    var resultsArr = [];
-    for(var i = 0; i < body.value.length; i++) {
-      var currentResult = body.value[i];
-      resultsArr.push({ url: currentResult.contentUrl,
-                        snippet: currentResult.name,
-                        thumbnail: currentResult.thumbnailUrl,
-                        context: currentResult.hostPageUrl})
+      collection.insert({term: searchTermDecoded, when: requestTime}, function (err, result) {
+        if (err) {
+          console.log(err);
+        } else {
+          res.send(result);
+        }
+        db.close();
+      })
     }
-    res.send(resultsArr);
-  });
+  })
+
+  // Bing.images(searchTerm, {
+  //   top: 10,
+  // }, function(error, result, body){
+  //
+  //   if (error) throw error;
+  //
+  //   var resultsArr = [];
+  //   for(var i = 0; i < body.value.length; i++) {
+  //     var currentResult = body.value[i];
+  //     resultsArr.push({ url: currentResult.contentUrl,
+  //                       snippet: currentResult.name,
+  //                       thumbnail: currentResult.thumbnailUrl,
+  //                       context: currentResult.hostPageUrl})
+  //   }
+  //   res.send(resultsArr);
+  // });
 })
 
 app.listen(port, function () {
